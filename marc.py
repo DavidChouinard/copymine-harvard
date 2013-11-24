@@ -268,6 +268,7 @@ fieldmap = {
     '8806': 'alt_glyph_link_ref', # fields refered to by 880a
     '856a': 'url_host',
     '856d': 'url_path',
+    '6905': 'library'  # non-standard field used to identify the specific Harvard Library
 }
 
 fields = sorted(fieldmap.values() + [
@@ -302,12 +303,18 @@ def process_file(f, lim=2000000):
         for k,v in fieldmap.iteritems():
             if marc.get(k):
                 record[v] = marc[k]
+                if isinstance(record[v], list):
+                    # converting to a set and back removes duplicates
+                    record[v] = list(set(record[v]))
 
         record.update(guess_type(record))
 
         # many systems (eg Sphinx) require a numeric uniq id.
         # the first nine characters of this field will serve.
         record['docid'] = record.get('id', '')[0:9]
+
+        if 'library' in record:
+            record['library'] = [library_codes.get(library, '') for library in record['library']]
 
         yield record
 
